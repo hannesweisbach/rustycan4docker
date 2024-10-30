@@ -60,11 +60,13 @@ struct JoinResponse {
     InterfaceName: network::JoinResponse,
 }
 
-async fn api_plugin_activate(payload: bytes::Bytes) -> Result<impl warp::Reply, warp::Rejection> {
+async fn api_plugin_activate(payload: bytes::Bytes, mgr: NetworkManager) -> Result<impl warp::Reply, warp::Rejection> {
     log_body(&payload);
     let rsp = HandshakeResponse {
         Implements: vec![String::from("NetworkDriver")],
     };
+
+    mgr.network_load().await;
 
     let mut status: http::StatusCode = http::StatusCode::OK;
     let jrsp = match serde_json::to_string(&rsp) {
@@ -400,13 +402,13 @@ fn process_body() -> impl Filter<Extract = (bytes::Bytes,), Error = warp::Reject
 #[tokio::main]
 async fn main() {
     let mgr = NetworkManager::new();
-    mgr.network_load().await;
     let filter = warp::any().map(move || mgr.clone());
 
     let payload = warp::post()
         .and(warp::path("Plugin.Activate"))
         .and(warp::path::end())
         .and(process_body())
+        .and(filter.clone())
         .and_then(api_plugin_activate);
 
     let get_cap = warp::post()
