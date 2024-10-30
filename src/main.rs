@@ -490,9 +490,8 @@ async fn main() {
         .or(dsc_new)
         .or(dsc_del);
 
-    let incoming =
-        UnixListenerStream::new(UnixListener::bind("/run/docker/plugins/rustyvxcan.sock").unwrap());
-    warp::serve(routes).run_incoming(incoming).await;
+    // let incoming =
+    //     UnixListenerStream::new(UnixListener::bind("/run/docker/plugins/rustyvxcan.sock").unwrap());
 
     // Alternatively, run an IP-based plugin
     // Create the file /etc/docker/plugins/rustyvxcan.json and add the following:
@@ -502,5 +501,6 @@ async fn main() {
     //      }
     //
     // Then, uncomment the following line (and remove the UnixListener above)
-    // warp::serve(routes).run(([127,0,0,1],7373)).await;
+    let incoming = ([127,0,0,1],7373);
+    warp::serve(routes).run(incoming).await;
 }
